@@ -18,23 +18,20 @@ import java.util.Locale;
 public class WeatherOtherServiceImpl implements WeatherOtherServices {
     private final WeatherFeignClient weatherFeignClient;
     private final InlineKeyboardMarkup inlineMessageButtons;
+    private final String yandexApiKey;
     @Override
     public SendMessage handle(Message message) {
-        Weather weather = weatherFeignClient.getWeather("3ed5dbe8-670b-497b-99d0-350402bebb79",String.valueOf(message.getLocation().getLatitude()),
-            String.valueOf( message.getLocation().getLongitude()),true);
+        Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
         String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
         SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
         sendMessage.setReplyMarkup(inlineMessageButtons);
         return sendMessage;
     }
-    @Override
-    public SendMessage handle(final long chatId, Message message) {
-     return null;
-    }
+
 
     @Override
     public BotState getHandlerName() {
-        return BotState.OTHER;
+        return BotState.OTHER_CITY;
     }
     private String getWeatherSaintPersburgNowFromYandexApiMessage(Fact fact, Weather weather) {
         StringBuilder weatherStringBuilder = new StringBuilder();
@@ -49,5 +46,14 @@ public class WeatherOtherServiceImpl implements WeatherOtherServices {
         weatherStringBuilder.append("Восход Солнца: ").append(weather.getForecastsList().get(0).getSunrise()).append("\n");
         weatherStringBuilder.append("Закат Солнца: ").append(weather.getForecastsList().get(0).getSunset());
         return  weatherStringBuilder.toString();
+    }
+
+    @Override
+    public SendMessage handle(long chatId, Message message) {
+        Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
+        String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
+        SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
+        sendMessage.setReplyMarkup(inlineMessageButtons);
+        return sendMessage;
     }
 }

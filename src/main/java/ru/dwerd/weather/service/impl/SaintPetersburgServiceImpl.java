@@ -19,10 +19,11 @@ import java.util.Locale;
 public class SaintPetersburgServiceImpl implements WeatherSaintPetersburgService {
     private final WeatherFeignClient weatherFeignClient;
     private final InlineKeyboardMarkup inlineMessageButtons;
+    private final  String yandexApiKey;
     @Override
     public SendMessage handle(Message message) {
         final long chatId = message.getChatId();
-        Weather weather = weatherFeignClient.getWeather("3ed5dbe8-670b-497b-99d0-350402bebb79","59.9311","30.3609",true);
+        Weather weather = weatherFeignClient.getWeather(yandexApiKey,"59.9311","30.3609",true);
         String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
         SendMessage replyToUser = new SendMessage(String.valueOf(chatId),meaasageWeather);
         replyToUser.setReplyMarkup(inlineMessageButtons);
@@ -30,7 +31,7 @@ public class SaintPetersburgServiceImpl implements WeatherSaintPetersburgService
     }
     @Override
     public SendMessage handle(final long chatId) {
-        Weather weather = weatherFeignClient.getWeather("3ed5dbe8-670b-497b-99d0-350402bebb79","59.9311","30.3609",true);
+        Weather weather = weatherFeignClient.getWeather(yandexApiKey,"59.9311","30.3609",true);
         String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
         SendMessage sendMessage =new SendMessage(String.valueOf(chatId),meaasageWeather);
         sendMessage.setReplyMarkup(inlineMessageButtons);

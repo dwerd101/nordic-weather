@@ -42,7 +42,7 @@ public class TelegramFacade {
         }
         else if(update.getMessage().getLocation()!=null) {
             log.info("Отправка коррднатов");
-            return Optional.ofNullable(botStateContext.processInputMessage(BotState.OTHER,update.getMessage()));
+            return Optional.ofNullable(botStateContext.processInputMessage(BotState.OTHER_CITY,update.getMessage()));
         }
 
         return Optional.empty();
@@ -68,6 +68,9 @@ public class TelegramFacade {
             case "/saint_petersburg":
                 botState = BotState.SAINT_PETERSBURG;
                 break;
+            case "/other_city":
+            case "/Other_city":
+                botState = BotState.OTHER_CITY;
       /*      case "/Tomorrow":
             case "/tomorrow":
             case "/tomorrow@hse_ebot":
@@ -105,11 +108,14 @@ public class TelegramFacade {
         switch (buttonQuery.getData()) {
             case "buttonMoscow":
               //  userDataCache.getUsersCurrentBotState(userId);
-                replyMessage = botStateContext.processButton(BotState.MOSCOW, chatId);
+                replyMessage = botStateContext.processButton(BotState.MOSCOW, buttonQuery.getMessage(), chatId);
                 return Optional.of(replyMessage);
             case "buttonPetersburg":
-                replyMessage = botStateContext.processButton(BotState.SAINT_PETERSBURG, chatId);
+                replyMessage = botStateContext.processButton(BotState.SAINT_PETERSBURG, buttonQuery.getMessage(), chatId);
                 return Optional.of(replyMessage);
+            case "buttonOtherCity":
+                replyMessage = botStateContext.processButton(BotState.OTHER_CITY, buttonQuery.getMessage(), chatId);
+                return  Optional.of(replyMessage);
         }
           /*  case "buttonTomorrow":
                 userDataCache.getUsersCurrentBotState(userId);
