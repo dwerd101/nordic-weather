@@ -10,7 +10,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.dwerd.weather.bot.config.BotState;
 import ru.dwerd.weather.bot.config.context.BotStateContext;
-
+import ru.dwerd.weather.mapper.UserMapper;
+import ru.dwerd.weather.model.MemoryUsers;
+import ru.dwerd.weather.model.User;
 
 import java.util.Optional;
 
@@ -19,30 +21,49 @@ import java.util.Optional;
 @AllArgsConstructor
 public class TelegramFacade {
     private final BotStateContext botStateContext;
-    //private final UserDataCache userDataCache;
-
+    private final MemoryUsers memoryUsers;
+    private final UserMapper userMapper;
 
     public Optional<BotApiMethod<?>> handleUpdate(Update update) {
         Message message = update.getMessage();
         if (update.hasCallbackQuery()) {
             CallbackQuery callbackQuery = update.getCallbackQuery();
-            log.info("New callbackQuery from User: {}, userId: {}, with data1: {}", update.getCallbackQuery().getFrom().getUserName(),
+            log.info("New callbackQuery from User: {}, userId: {}, with data1: {}",
+                update.getCallbackQuery().getFrom().getUserName(),
                 callbackQuery.getFrom().getId(), update.getCallbackQuery().getData());
             return processCallbackQuery(callbackQuery);
-        }
-
-
-       else  if (message != null && message.hasText()) {
+        } else if (message != null && message.hasText()) {
             log.info("New message from User:{}, chatId: {},  with text: {}",
                 message.getFrom().getUserName(), message.getChatId(), message.getText());
             Optional<SendMessage> optionalSendMessage = handleInputMessage(message);
             if (optionalSendMessage.isPresent()) {
                 return Optional.of(optionalSendMessage.get());
             }
-        }
-        else if(update.getMessage().getLocation()!=null) {
-            log.info("Отправка коррднатов");
-            return Optional.ofNullable(botStateContext.processInputMessage(BotState.OTHER_CITY,update.getMessage()));
+        } else if (update.getMessage().getLocation() != null) {
+            if (!memoryUsers.getUsers().contains(userMapper.toUser(message))) {
+                memoryUsers.addUsers(userMapper.toUser(message));
+                memoryUsers.addHistoryUsers(userMapper.toUser(message));
+                return Optional.ofNullable(botStateContext.processInputMessage(BotState.OTHER_CITY,
+                    update.getMessage()));
+            } else {
+                User user = memoryUsers.getUsers().stream()
+                    .filter(u -> u.getUserId().equals(message.getFrom().getId()))
+                    .findFirst().get();
+
+                user.setLocation(userMapper.toUser(message).getLocation());
+                user.setUsername(userMapper.toUser(message).getUsername());
+                user.setFirstName(userMapper.toUser(message).getFirstName());
+                user.setLastName(userMapper.toUser(message).getLastName());
+                user.setChatId(userMapper.toUser(message).getChatId());
+                user.setUserId(userMapper.toUser(message).getUserId());
+
+                memoryUsers.addUsers(user);
+                memoryUsers.addHistoryUsers(user);
+
+                log.info("Отправка коррднатов");
+                return Optional.ofNullable(botStateContext.processInputMessage(BotState.OTHER_CITY,
+                    update.getMessage()));
+            }
         }
 
         return Optional.empty();
@@ -60,7 +81,7 @@ public class TelegramFacade {
                 break;
             case "/Moscow":
             case "/moscow":
-           // case "/today@hse_ebot":
+                // case "/today@hse_ebot":
                 // case "СЕГОДНЯ":
                 botState = BotState.MOSCOW;
                 break;
@@ -94,7 +115,7 @@ public class TelegramFacade {
 
         }
 
-       // userDataCache.setUsersCurrentBotState(userId, botState);
+        // userDataCache.setUsersCurrentBotState(userId, botState);
 
         replyMessage = botStateContext.processInputMessage(botState, message);
 
@@ -107,15 +128,16 @@ public class TelegramFacade {
         SendMessage replyMessage;
         switch (buttonQuery.getData()) {
             case "buttonMoscow":
-              //  userDataCache.getUsersCurrentBotState(userId);
+                //  userDataCache.getUsersCurrentBotState(userId);
                 replyMessage = botStateContext.processButton(BotState.MOSCOW, buttonQuery.getMessage(), chatId);
                 return Optional.of(replyMessage);
             case "buttonPetersburg":
-                replyMessage = botStateContext.processButton(BotState.SAINT_PETERSBURG, buttonQuery.getMessage(), chatId);
+                replyMessage = botStateContext.processButton(BotState.SAINT_PETERSBURG, buttonQuery.getMessage(),
+                    chatId);
                 return Optional.of(replyMessage);
             case "buttonOtherCity":
                 replyMessage = botStateContext.processButton(BotState.OTHER_CITY, buttonQuery.getMessage(), chatId);
-                return  Optional.of(replyMessage);
+                return Optional.of(replyMessage);
         }
           /*  case "buttonTomorrow":
                 userDataCache.getUsersCurrentBotState(userId);

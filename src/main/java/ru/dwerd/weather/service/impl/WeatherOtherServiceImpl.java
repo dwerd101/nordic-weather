@@ -7,8 +7,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.dwerd.weather.bot.config.BotState;
 import ru.dwerd.weather.feign.WeatherFeignClient;
+import ru.dwerd.weather.mapper.UserMapper;
 import ru.dwerd.weather.model.Condition;
 import ru.dwerd.weather.model.Fact;
+import ru.dwerd.weather.model.MemoryUsers;
 import ru.dwerd.weather.model.Weather;
 import ru.dwerd.weather.service.WeatherOtherServices;
 
@@ -19,13 +21,23 @@ public class WeatherOtherServiceImpl implements WeatherOtherServices {
     private final WeatherFeignClient weatherFeignClient;
     private final InlineKeyboardMarkup inlineMessageButtons;
     private final String yandexApiKey;
+    private final UserMapper userMapper;
+    private final MemoryUsers memoryUsers;
     @Override
     public SendMessage handle(Message message) {
-        Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
-        String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
-        SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
-        sendMessage.setReplyMarkup(inlineMessageButtons);
-        return sendMessage;
+        if(memoryUsers.getUsers().contains(userMapper.toUser(message))) {
+            Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
+            String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
+            SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
+            sendMessage.setReplyMarkup(inlineMessageButtons);
+            return sendMessage;
+        }
+        else {
+         SendMessage sendMessage = new SendMessage(String.valueOf(message.getChatId()), "Вы не отправили свои координаты, поэтому " +
+             "узнать погоду невозможно. Пожалуйста, пришлите свою геолокацию");
+         sendMessage.setReplyMarkup(inlineMessageButtons);
+         return sendMessage;
+        }
     }
 
 
@@ -50,10 +62,19 @@ public class WeatherOtherServiceImpl implements WeatherOtherServices {
 
     @Override
     public SendMessage handle(long chatId, Message message) {
-        Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
-        String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
-        SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
-        sendMessage.setReplyMarkup(inlineMessageButtons);
-        return sendMessage;
+        if(memoryUsers.getUsers().contains(userMapper.toUser(message))) {
+            Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()),
+                String.valueOf( message.getLocation().getLongitude()),true);
+            String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
+            SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
+            sendMessage.setReplyMarkup(inlineMessageButtons);
+            return sendMessage;
+        }
+        else {
+            SendMessage sendMessage = new SendMessage(String.valueOf(message.getChatId()), "Вы не отправили свои координаты, поэтому " +
+                "узнать погоду невозможно. Пожалуйста, пришлите свою геолокацию");
+            sendMessage.setReplyMarkup(inlineMessageButtons);
+            return sendMessage;
+        }
     }
 }
