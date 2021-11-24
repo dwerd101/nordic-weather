@@ -7,8 +7,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import ru.dwerd.weather.bot.config.BotState;
 import ru.dwerd.weather.feign.WeatherFeignClient;
+import ru.dwerd.weather.mapper.UserMapper;
 import ru.dwerd.weather.model.Condition;
 import ru.dwerd.weather.model.Fact;
+import ru.dwerd.weather.model.MemoryUsers;
 import ru.dwerd.weather.model.Weather;
 import ru.dwerd.weather.service.WeatherSaintPetersburgService;
 
@@ -20,8 +22,11 @@ public class SaintPetersburgServiceImpl implements WeatherSaintPetersburgService
     private final WeatherFeignClient weatherFeignClient;
     private final InlineKeyboardMarkup inlineMessageButtons;
     private final  String yandexApiKey;
+    private final UserMapper userMapper;
+    private final MemoryUsers memoryUsers;
     @Override
     public SendMessage handle(Message message) {
+        memoryUsers.addHistoryUsers(userMapper.toUser(message));
         final long chatId = message.getChatId();
         Weather weather = weatherFeignClient.getWeather(yandexApiKey,"59.9311","30.3609",true);
         String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);

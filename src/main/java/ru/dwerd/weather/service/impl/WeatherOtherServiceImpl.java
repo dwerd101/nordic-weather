@@ -11,6 +11,7 @@ import ru.dwerd.weather.mapper.UserMapper;
 import ru.dwerd.weather.model.Condition;
 import ru.dwerd.weather.model.Fact;
 import ru.dwerd.weather.model.MemoryUsers;
+import ru.dwerd.weather.model.User;
 import ru.dwerd.weather.model.Weather;
 import ru.dwerd.weather.service.WeatherOtherServices;
 
@@ -26,7 +27,8 @@ public class WeatherOtherServiceImpl implements WeatherOtherServices {
     @Override
     public SendMessage handle(Message message) {
         if(memoryUsers.getUsers().contains(userMapper.toUser(message))) {
-            Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()), String.valueOf( message.getLocation().getLongitude()),true);
+            Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()),
+                String.valueOf( message.getLocation().getLongitude()),true);
             String meaasageWeather = getWeatherSaintPersburgNowFromYandexApiMessage(weather.getFact(),weather);
             SendMessage sendMessage =new SendMessage(String.valueOf(message.getChatId()),meaasageWeather);
             sendMessage.setReplyMarkup(inlineMessageButtons);
@@ -62,6 +64,7 @@ public class WeatherOtherServiceImpl implements WeatherOtherServices {
 
     @Override
     public SendMessage handle(long chatId, Message message) {
+        User user = userMapper.toUser(message);
         if(memoryUsers.getUsers().contains(userMapper.toUser(message))) {
             Weather weather = weatherFeignClient.getWeather(yandexApiKey,String.valueOf(message.getLocation().getLatitude()),
                 String.valueOf( message.getLocation().getLongitude()),true);
